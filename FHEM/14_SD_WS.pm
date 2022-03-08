@@ -104,7 +104,8 @@ sub SD_WS_Initialize {
     'SD_WS_204.*'     => { ATTR => 'event-min-interval:.*:300 event-on-change-reading:.*', FILTER => '%NAME', GPLOT => 'temp4hum4:Temp/Hum,', autocreateThreshold => '2:180'},
     'SD_WS_205.*'     => { ATTR => 'event-min-interval:.*:300 event-on-change-reading:.*', FILTER => '%NAME', GPLOT => 'temp4hum4:Temp/Hum,', autocreateThreshold => '2:180'},
     'SD_WS_206.*'     => { ATTR => 'event-min-interval:.*:300 event-on-change-reading:.*', FILTER => '%NAME', GPLOT => 'temp4hum4:Temp/Hum,', autocreateThreshold => '2:180'},
-    'SD_WS_207.*'     => { ATTR => 'event-min-interval:.*:300 event-on-change-reading:.*', FILTER => '%NAME', GPLOT => 'temp4hum4:Temp/Hum,', autocreateThreshold => '2:180'},
+    'SD_WS_207.*'     => { ATTR => 'event-min-interval:.*:300 event-on-change-reading:.*', FILTER => '%NAME', GPLOT => 'temp4hum4:Temp/Hum,', autocreateThreshold => '2:180'},    
+	  'SD_WS_211_.*'    => { ATTR => 'event-min-interval:.*:300 event-on-change-reading:.*', FILTER => '%NAME', GPLOT => 'temp4hum4:Temp/Hum,', autocreateThreshold => '2:180'},
   };
   return;
 }
@@ -1335,6 +1336,22 @@ sub SD_WS_Parse {
         lux        => sub {my ($rawData,undef) = @_; return substr($rawData,30,6) + 0; },
         uv         => sub {my ($rawData,undef) = @_; return substr($rawData,36,3) / 10; },
         crcok      => sub {return 1;}, # checks are in 00_SIGNALduino.pm sub SIGNALduino_Bresser_7in1
+    },
+    211 => {
+        # WH31 
+        sensortype => 'WH31',
+        model      => 'SD_WS_211',
+        #fixedId    => '1',
+        prematch   => sub {return 1; },
+        id         => sub {my (undef,$bitData) = @_; return (SD_WS_binaryToNumber($bitData,17,19) + 1);},
+		    channel    => sub {my (undef,$bitData) = @_; return (SD_WS_binaryToNumber($bitData,17,19) + 1);},
+        bat        => sub {my (undef,$bitData) = @_; return substr($bitData,20,1) eq '1' ? 'ok' : 'low';}, #TODO: correct???
+        temp       => sub {my (undef,$bitData) = @_;
+                            my $temp = SD_WS_binaryToNumber($bitData,21,31);  # 0x7ff if invalid?
+                            return round(($temp - 400) / 10, 1);
+						              },							
+        hum        => sub {my ($rawData,undef) = @_; return hex(substr($rawData,8,2)); },
+        crcok      => sub {return -1;}, # checks are in 00_SIGNALduino.pm sub SIGNALduino_WH31
     }
   );
 
